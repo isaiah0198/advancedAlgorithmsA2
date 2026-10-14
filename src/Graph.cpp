@@ -11,3 +11,7 @@ void Graph::addEdge(int u, int v, int weight) {
 int Graph::getWeight(int u, int v) const {
     return weights_[u][v];
 }
+
+int Graph::vertexCount() const {
+    return vertices_;
+}
