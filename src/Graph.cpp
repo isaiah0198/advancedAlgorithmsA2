@@ -5,6 +5,7 @@ Graph::Graph(int vertices)
 
 void Graph::addEdge(int u, int v, int weight) {
     weights_[u][v] = weight;
+    weights_[v][u] = weight; // For an undirected graph
 }
 
 int Graph::getWeight(int u, int v) const {
