@@ -9,6 +9,20 @@ int main() {
     triangle.addEdge(0, 2, 2);
     triangle.addEdge(1, 2, 4);
 
+    for (unsigned int seed = 0; seed < 10; ++seed) {
+    std::cout << "Seed " << seed
+              << ": "
+              << kargerMinCut(triangle, seed)
+              << '\n';
+    }
+
+    std::cout << "Stoer-Wagner triangle: "
+              << stoerWagnerMinCut(triangle)
+              << '\n';
+
+    std::cout << "Karger repeated triangle: "
+              << kargerRepeatedMinCut(triangle, 10, 0)
+              << '\n';
 
     std::cout << "Karger triangle cut: "
               << kargerMinCut(triangle, 42)

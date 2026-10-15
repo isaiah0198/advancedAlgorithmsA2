@@ -2,6 +2,7 @@
 #include <random>
 #include <utility>
 #include <iostream>
+#include <limits>
 
 static std::pair<int, int> chooseRandomEdge(
     const Graph& graph,
@@ -72,4 +73,25 @@ int kargerMinCut(Graph graph, unsigned int seed) {
     }
 
     return 0;
+}
+
+int kargerRepeatedMinCut(
+    const Graph& graph,
+    int repetitions,
+    unsigned int baseSeed
+) {
+    int bestCut = std::numeric_limits<int>::max();
+
+    for (int i = 0; i < repetitions; ++i) {
+        int cut = kargerMinCut(
+            graph,
+            baseSeed + i
+        );
+
+        if (cut < bestCut) {
+            bestCut = cut;
+        }
+    }
+
+    return bestCut;
 }
