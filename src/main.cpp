@@ -3,14 +3,35 @@
 #include "StoerWagner.hpp"
 
 int main() {
-    Graph graph(3);
+    Graph triangle(3);
+    triangle.addEdge(0, 1, 3);
+    triangle.addEdge(0, 2, 2);
+    triangle.addEdge(1, 2, 4);
 
-    graph.addEdge(0, 2, 2);
-    graph.addEdge(1, 2, 4);
-    graph.addEdge(0, 1, 3);
+    std::cout << "Triangle min cut: "
+              << stoerWagnerMinCut(triangle)
+              << " (expected 5)\n";
 
-    int cut = stoerWagnerMinCut(graph);
-    std::cout << "Minimum cut: " << cut << '\n';
+
+    Graph path(4);
+    path.addEdge(0, 1, 1);
+    path.addEdge(1, 2, 1);
+    path.addEdge(2, 3, 1);
+
+    std::cout << "Path min cut: "
+              << stoerWagnerMinCut(path)
+              << " (expected 1)\n";
+
+
+    Graph cycle(4);
+    cycle.addEdge(0, 1, 1);
+    cycle.addEdge(1, 2, 1);
+    cycle.addEdge(2, 3, 1);
+    cycle.addEdge(3, 0, 1);
+
+    std::cout << "Cycle min cut: "
+              << stoerWagnerMinCut(cycle)
+              << " (expected 2)\n";
 
     return 0;
 }

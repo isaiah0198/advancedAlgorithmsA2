@@ -13,7 +13,9 @@ int stoerWagnerMinCut(Graph graph) {
         std::vector<int> connectionWeight(graph.vertexCount(), 0);
         std::vector<bool> added(graph.vertexCount(), false);
 
-        for (int i = 0; i < graph.activeVertexCount(); ++i) {
+        int phaseSize = graph.activeVertexCount();
+
+        for (int i = 0; i < phaseSize; ++i) {
             int selected = -1;
             
             for (int v = 0; v < graph.vertexCount(); ++v) {
@@ -26,13 +28,10 @@ int stoerWagnerMinCut(Graph graph) {
                 }
             }
 
-            std::cout << "i = " << i << ", selected = " << selected << ", active = " << graph.activeVertexCount() << '\n';
-
             added[selected] = true;
 
-            if (i == graph.activeVertexCount() - 1) {
-                std::cout << "s = " << prev << ", t = " << selected << ", candidate cut = " << connectionWeight[selected] << '\n';
-                
+            if (i == phaseSize - 1) {
+                                
                 bestCut = std::min(bestCut, connectionWeight[selected]);
                 graph.mergeVertices(prev, selected);
             }
