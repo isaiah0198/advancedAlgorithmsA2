@@ -1,9 +1,11 @@
 #include "StoerWagner.hpp"
 #include <vector>
 #include <iostream>
+#include <limits>
+#include <algorithm>
 
 int stoerWagnerMinCut(Graph graph) {
-    int bestCut = 0;
+    int bestCut = std::numeric_limits<int>::max();
 
     while (graph.activeVertexCount() > 1) {
         int prev = -1;
@@ -27,7 +29,13 @@ int stoerWagnerMinCut(Graph graph) {
             std::cout << "i = " << i << ", selected = " << selected << ", active = " << graph.activeVertexCount() << '\n';
 
             added[selected] = true;
-            
+
+            if (i == graph.activeVertexCount() - 1) {
+                std::cout << "s = " << prev << ", t = " << selected << ", candidate cut = " << connectionWeight[selected] << '\n';
+                
+                bestCut = std::min(bestCut, connectionWeight[selected]);
+            }
+
             for (int v = 0; v < graph.vertexCount(); ++v) {
                 if (!graph.isActive(v) || added[v]) {
                     continue;
