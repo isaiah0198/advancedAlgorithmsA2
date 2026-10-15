@@ -34,6 +34,7 @@ int stoerWagnerMinCut(Graph graph) {
                 std::cout << "s = " << prev << ", t = " << selected << ", candidate cut = " << connectionWeight[selected] << '\n';
                 
                 bestCut = std::min(bestCut, connectionWeight[selected]);
+                graph.mergeVertices(prev, selected);
             }
 
             for (int v = 0; v < graph.vertexCount(); ++v) {
@@ -45,8 +46,6 @@ int stoerWagnerMinCut(Graph graph) {
             }
             prev = selected;
         }
-        
-        break;
     }
 
     return bestCut;
