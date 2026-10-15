@@ -1,5 +1,6 @@
 #include <iostream>
 #include "Graph.hpp"
+#include "StoerWagner.hpp"
 
 int main() {
     Graph graph(3);
@@ -18,5 +19,9 @@ int main() {
     std::cout << "Vertex 1 active: " << graph.isActive(1) << '\n';
 
     std::cout << "Active after merge: " << graph.activeVertexCount() << '\n';
+
+    int cut = stoerWagnerMinCut(graph);
+    std::cout << "Minimum cut: " << cut << '\n';
+
     return 0;
 }
