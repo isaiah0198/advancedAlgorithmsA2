@@ -21,3 +21,16 @@ int Graph::vertexCount() const {
 bool Graph::isActive(int vertex) const {
     return active_[vertex];
 }
+
+void Graph::mergeVertices(int s, int t) {
+    for (int v = 0; v < vertices_; ++v) {
+        if (v == s || v == t || !active_[v]) {
+            continue;
+        }
+
+        weights_[s][v] += weights_[t][v];
+        weights_[v][s] += weights_[s][v];
+    }
+
+    active_[t] = false;
+}
