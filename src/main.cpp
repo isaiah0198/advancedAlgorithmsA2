@@ -9,9 +9,10 @@ int main() {
     triangle.addEdge(0, 2, 2);
     triangle.addEdge(1, 2, 4);
 
-    std::cout << "Triangle min cut: "
-              << stoerWagnerMinCut(triangle)
-              << " (expected 5)\n";
+
+    std::cout << "Karger triangle cut: "
+              << kargerMinCut(triangle, 42)
+              << '\n';
 
 
     Graph path(4);
