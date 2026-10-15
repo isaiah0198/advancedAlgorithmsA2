@@ -1,6 +1,7 @@
 #include <iostream>
 #include "Graph.hpp"
 #include "StoerWagner.hpp"
+#include "Karger.hpp"
 
 int main() {
     Graph triangle(3);
