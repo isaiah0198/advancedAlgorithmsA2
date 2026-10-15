@@ -29,8 +29,18 @@ void Graph::mergeVertices(int s, int t) {
         }
 
         weights_[s][v] += weights_[t][v];
-        weights_[v][s] += weights_[s][v];
+        weights_[v][s] = weights_[s][v];
     }
 
     active_[t] = false;
+}
+
+int Graph::activeVertexCount() const {
+    int count = 0;
+    for (bool active : active_) {
+        if (active) {
+            ++count;
+        }
+    }
+    return count;
 }

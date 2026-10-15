@@ -11,6 +11,7 @@ public:
     int vertexCount() const;
     bool isActive(int vertex) const;
     void mergeVertices(int s, int t);
+    int activeVertexCount() const;
 
 private:
     int vertices_;
