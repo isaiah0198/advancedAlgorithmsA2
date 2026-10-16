@@ -5,10 +5,64 @@
 #include <chrono>
 #include <vector>
 #include <algorithm>
+#include <random>
+#include <set>
 
 long long median(std::vector<long long> values) {
     std::sort(values.begin(), values.end());
     return values[values.size() / 2];
+}
+
+Graph makeRandomConnectedGraph(
+    int vertices,
+    int extraEdges,
+    unsigned int seed
+) {
+    Graph graph(vertices);
+    std::mt19937 rng(seed);
+
+    for (int v = 1; v < vertices; ++v) {
+        std::uniform_int_distribution<int> parentDist(0, v - 1);
+        int parent = parentDist(rng);
+
+        graph.addEdge(parent, v, 1);
+    }
+
+    std::set<std::pair<int, int>> edges;
+
+    for (int v = 1; v < vertices; ++v) {
+        for (int u = 0; u < v; ++u) {
+            if (graph.getWeight(u, v) > 0) {
+                edges.insert({u, v});
+            }
+        }
+    }
+
+    std::uniform_int_distribution<int> vertexDist(0, vertices - 1);
+
+    while (extraEdges > 0) {
+        int u = vertexDist(rng);
+        int v = vertexDist(rng);
+
+        if (u == v) {
+            continue;
+        }
+
+        if (u > v) {
+            std::swap(u, v);
+        }
+
+        if (edges.count({u, v}) > 0) {
+            continue;
+        }
+
+        graph.addEdge(u, v, 1);
+        edges.insert({u, v});
+
+        --extraEdges;
+    }
+
+    return graph;
 }
 
 int main() {
@@ -122,8 +176,8 @@ int main() {
     }
 
     std::cout << "Stoer-Wagner median: "
-            << median(swTimes)
-            << " ns\n";
+              << median(swTimes)
+              << " ns\n";
 
     for (int repetitions : repetitionCounts) {
         std::vector<long long> kargerTimes;
@@ -149,11 +203,79 @@ int main() {
         }
 
         std::cout << "Karger repetitions "
-                << repetitions
-                << " median: "
-                << median(kargerTimes)
-                << " ns\n";
+                  << repetitions
+                  << " median: "
+                  << median(kargerTimes)
+                  << " ns\n";
     }
+
+    Graph random10 = makeRandomConnectedGraph(10, 10, 42);
+
+        std::cout << "\nRandom 10-node graph:\n";
+
+        std::cout << "Stoer-Wagner: "
+                  << stoerWagnerMinCut(random10)
+                  << '\n';
+
+        std::cout << "Karger repeated: "
+                  << kargerRepeatedMinCut(random10, 50, 0)
+                  << '\n';
+
+        std::cout << "\nSize scaling test:\n";
+
+        int sizes[] = {10, 25, 50, 100};
+
+        for (int vertices : sizes) {
+            Graph graph = makeRandomConnectedGraph(
+                vertices,
+                vertices,
+                42
+            );
+
+            int exactCut = stoerWagnerMinCut(graph);
+
+            std::vector<long long> swTimes;
+            std::vector<long long> kargerTimes;
+
+            for (int run = 0; run < 51; ++run) {
+                auto swStart = std::chrono::high_resolution_clock::now();
+
+                int swResult = stoerWagnerMinCut(graph);
+
+                auto swEnd = std::chrono::high_resolution_clock::now();
+
+                swTimes.push_back(
+                    std::chrono::duration_cast<std::chrono::nanoseconds>(
+                        swEnd - swStart
+                    ).count()
+                );
+
+
+                auto kStart = std::chrono::high_resolution_clock::now();
+
+                int kargerResult = kargerRepeatedMinCut(
+                    graph,
+                    20,
+                    run * 1000
+                );
+
+                auto kEnd = std::chrono::high_resolution_clock::now();
+
+                kargerTimes.push_back(
+                    std::chrono::duration_cast<std::chrono::nanoseconds>(
+                        kEnd - kStart
+                    ).count()
+                );
+            }
+
+            std::cout << "Vertices: " << vertices
+                      << ", exact cut: " << exactCut
+                      << ", Stoer-Wagner median: "
+                      << median(swTimes)
+                      << " ns, Karger x20 median: "
+                      << median(kargerTimes)
+                      << " ns\n";
+        }
 
     return 0;
 }
