@@ -277,5 +277,37 @@ int main() {
                       << " ns\n";
         }
 
+        std::cout << "\nDensity test:\n";
+
+        int densityVertices = 50;
+        double densities[] = {0.10, 0.25, 0.50, 0.75};
+
+        int maxEdges =
+            densityVertices * (densityVertices - 1) / 2;
+
+        for (double density : densities) {
+            int targetEdges =
+                static_cast<int>(density * maxEdges);
+
+            int extraEdges =
+                targetEdges - (densityVertices - 1);
+
+            Graph graph = makeRandomConnectedGraph(
+                densityVertices,
+                extraEdges,
+                42
+            );
+
+            int exactCut = stoerWagnerMinCut(graph);
+
+            std::cout << "Density: "
+                      << density
+                      << ", edges: "
+                      << targetEdges
+                      << ", exact cut: "
+                      << exactCut
+                      << '\n';
+        }
+
     return 0;
 }
