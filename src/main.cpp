@@ -2,6 +2,14 @@
 #include "Graph.hpp"
 #include "StoerWagner.hpp"
 #include "Karger.hpp"
+#include <chrono>
+#include <vector>
+#include <algorithm>
+
+long long median(std::vector<long long> values) {
+    std::sort(values.begin(), values.end());
+    return values[values.size() / 2];
+}
 
 int main() {
     Graph triangle(3);
@@ -29,6 +37,34 @@ int main() {
     fiveNode.addEdge(2, 3, 2);
     fiveNode.addEdge(2, 4, 3);
     fiveNode.addEdge(3, 4, 2);
+
+    int exactCut = stoerWagnerMinCut(fiveNode);
+
+    int repetitionCounts[] = {1, 2, 5, 10, 20, 50};
+    int experiments = 100;
+
+    for (int repetitions : repetitionCounts) {
+        int successes = 0;
+
+        for (int experiment = 0; experiment < experiments; ++experiment) {
+            unsigned int baseSeed = experiment * 1000;
+
+            int result = kargerRepeatedMinCut(
+                fiveNode,
+                repetitions,
+                baseSeed
+            );
+
+            if (result == exactCut) {
+                ++successes;
+            }
+        }
+
+        std::cout << "Repetitions: " << repetitions
+                  << ", successes: "
+                  << successes << " / "
+                  << experiments << '\n';
+    }
 
     std::cout << "Triangle:\n";
     std::cout << "Stoer-Wagner: "
@@ -66,6 +102,58 @@ int main() {
     std::cout << "Karger repeated: "
               << kargerRepeatedMinCut(fiveNode, 50, 0)
               << '\n';
+
+    std::cout << "\nTiming test:\n";
+
+    std::vector<long long> swTimes;
+
+    for (int run = 0; run < 51; ++run) {
+        auto start = std::chrono::high_resolution_clock::now();
+
+        int result = stoerWagnerMinCut(fiveNode);
+
+        auto end = std::chrono::high_resolution_clock::now();
+
+        swTimes.push_back(
+            std::chrono::duration_cast<std::chrono::nanoseconds>(
+                end - start
+            ).count()
+        );
+    }
+
+    std::cout << "Stoer-Wagner median: "
+            << median(swTimes)
+            << " ns\n";
+
+    for (int repetitions : repetitionCounts) {
+        std::vector<long long> kargerTimes;
+
+        for (int run = 0; run < 51; ++run) {
+            unsigned int seed = run * 1000;
+
+            auto start = std::chrono::high_resolution_clock::now();
+
+            int result = kargerRepeatedMinCut(
+                fiveNode,
+                repetitions,
+                seed
+            );
+
+            auto end = std::chrono::high_resolution_clock::now();
+
+            kargerTimes.push_back(
+                std::chrono::duration_cast<std::chrono::nanoseconds>(
+                    end - start
+                ).count()
+            );
+        }
+
+        std::cout << "Karger repetitions "
+                << repetitions
+                << " median: "
+                << median(kargerTimes)
+                << " ns\n";
+    }
 
     return 0;
 }
