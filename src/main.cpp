@@ -402,5 +402,60 @@ for (int vertices : sizes) {
                 << " ns\n";
     }
 
+            unsigned int graphSeeds[] = {
+            42,
+            142,
+            242,
+            342,
+            442
+        };
+
+        std::cout << "\nDensity reliability across graph seeds:\n";
+
+        for (double density : densities) {
+            int totalSuccesses = 0;
+            int totalTrials = 0;
+
+            int targetEdges =
+                static_cast<int>(density * maxEdges);
+
+            int extraEdges =
+                targetEdges - (densityVertices - 1);
+
+            for (unsigned int graphSeed : graphSeeds) {
+                Graph graph = makeRandomConnectedGraph(
+                    densityVertices,
+                    extraEdges,
+                    graphSeed
+                );
+
+                int exactCut = stoerWagnerMinCut(graph);
+
+                for (int experiment = 0;
+                    experiment < 100;
+                    ++experiment) {
+
+                    int result = kargerMinCut(
+                        graph,
+                        experiment * 1000
+                    );
+
+                    if (result == exactCut) {
+                        ++totalSuccesses;
+                    }
+
+                    ++totalTrials;
+                }
+            }
+
+            std::cout << "Density: "
+                    << density
+                    << ", successes: "
+                    << totalSuccesses
+                    << " / "
+                    << totalTrials
+                    << '\n';
+        }
+
     return 0;
 }
