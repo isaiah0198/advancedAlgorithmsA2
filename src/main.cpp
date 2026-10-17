@@ -223,91 +223,184 @@ int main() {
 
         std::cout << "\nSize scaling test:\n";
 
-        int sizes[] = {10, 25, 50, 100};
+int sizes[] = {10, 25, 50, 100};
 
-        for (int vertices : sizes) {
-            Graph graph = makeRandomConnectedGraph(
-                vertices,
-                vertices,
-                42
+for (int vertices : sizes) {
+    Graph graph = makeRandomConnectedGraph(
+        vertices,
+        vertices,
+        42
+    );
+
+    int exactCut = stoerWagnerMinCut(graph);
+
+    std::vector<long long> swTimes;
+    std::vector<long long> kargerTimes;
+
+    for (int run = 0; run < 51; ++run) {
+        auto swStart =
+            std::chrono::high_resolution_clock::now();
+
+        int swResult =
+            stoerWagnerMinCut(graph);
+
+        auto swEnd =
+            std::chrono::high_resolution_clock::now();
+
+        swTimes.push_back(
+            std::chrono::duration_cast<std::chrono::nanoseconds>(
+                swEnd - swStart
+            ).count()
+        );
+
+        auto kStart =
+            std::chrono::high_resolution_clock::now();
+
+        int kargerResult =
+            kargerRepeatedMinCut(
+                graph,
+                20,
+                run * 1000
             );
 
-            int exactCut = stoerWagnerMinCut(graph);
+        auto kEnd =
+            std::chrono::high_resolution_clock::now();
 
-            std::vector<long long> swTimes;
-            std::vector<long long> kargerTimes;
+        kargerTimes.push_back(
+            std::chrono::duration_cast<std::chrono::nanoseconds>(
+                kEnd - kStart
+            ).count()
+        );
+    }
 
-            for (int run = 0; run < 51; ++run) {
-                auto swStart = std::chrono::high_resolution_clock::now();
+    std::cout << "Vertices: "
+              << vertices
+              << ", exact cut: "
+              << exactCut
+              << ", Stoer-Wagner median: "
+              << median(swTimes)
+              << " ns, Karger x20 median: "
+              << median(kargerTimes)
+              << " ns\n";
+}
 
-                int swResult = stoerWagnerMinCut(graph);
+    std::cout << "\nDensity test:\n";
 
-                auto swEnd = std::chrono::high_resolution_clock::now();
+    int densityVertices = 50;
 
-                swTimes.push_back(
-                    std::chrono::duration_cast<std::chrono::nanoseconds>(
-                        swEnd - swStart
-                    ).count()
-                );
+    double densities[] = {
+        0.10,
+        0.25,
+        0.50,
+        0.75
+    };
 
+    int maxEdges =
+        densityVertices *
+        (densityVertices - 1) / 2;
 
-                auto kStart = std::chrono::high_resolution_clock::now();
+    for (double density : densities) {
 
-                int kargerResult = kargerRepeatedMinCut(
-                    graph,
-                    20,
-                    run * 1000
-                );
+        int targetEdges =
+            static_cast<int>(
+                density * maxEdges
+            );
 
-                auto kEnd = std::chrono::high_resolution_clock::now();
+        int extraEdges =
+            targetEdges -
+            (densityVertices - 1);
 
-                kargerTimes.push_back(
-                    std::chrono::duration_cast<std::chrono::nanoseconds>(
-                        kEnd - kStart
-                    ).count()
-                );
-            }
-
-            std::cout << "Vertices: " << vertices
-                      << ", exact cut: " << exactCut
-                      << ", Stoer-Wagner median: "
-                      << median(swTimes)
-                      << " ns, Karger x20 median: "
-                      << median(kargerTimes)
-                      << " ns\n";
-        }
-
-        std::cout << "\nDensity test:\n";
-
-        int densityVertices = 50;
-        double densities[] = {0.10, 0.25, 0.50, 0.75};
-
-        int maxEdges =
-            densityVertices * (densityVertices - 1) / 2;
-
-        for (double density : densities) {
-            int targetEdges =
-                static_cast<int>(density * maxEdges);
-
-            int extraEdges =
-                targetEdges - (densityVertices - 1);
-
-            Graph graph = makeRandomConnectedGraph(
+        Graph graph =
+            makeRandomConnectedGraph(
                 densityVertices,
                 extraEdges,
                 42
             );
 
-            int exactCut = stoerWagnerMinCut(graph);
+        int exactCut =
+            stoerWagnerMinCut(graph);
 
-            std::cout << "Density: "
-                      << density
-                      << ", edges: "
-                      << targetEdges
-                      << ", exact cut: "
-                      << exactCut
-                      << '\n';
+
+        // Single-run Karger reliability
+        int singleRunSuccesses = 0;
+        int densityExperiments = 100;
+
+        for (int experiment = 0;
+            experiment < densityExperiments;
+            ++experiment) {
+
+            int result =
+                kargerMinCut(
+                    graph,
+                    experiment * 1000
+                );
+
+            if (result == exactCut) {
+                ++singleRunSuccesses;
+            }
         }
+
+
+        // Runtime measurements
+        std::vector<long long> swTimes;
+        std::vector<long long> kargerTimes;
+
+        for (int run = 0; run < 51; ++run) {
+
+            auto swStart =
+                std::chrono::high_resolution_clock::now();
+
+            int swResult =
+                stoerWagnerMinCut(graph);
+
+            auto swEnd =
+                std::chrono::high_resolution_clock::now();
+
+            swTimes.push_back(
+                std::chrono::duration_cast<std::chrono::nanoseconds>(
+                    swEnd - swStart
+                ).count()
+            );
+
+
+            auto kStart =
+                std::chrono::high_resolution_clock::now();
+
+            int kargerResult =
+                kargerRepeatedMinCut(
+                    graph,
+                    20,
+                    run * 1000
+                );
+
+            auto kEnd =
+                std::chrono::high_resolution_clock::now();
+
+            kargerTimes.push_back(
+                std::chrono::duration_cast<std::chrono::nanoseconds>(
+                    kEnd - kStart
+                ).count()
+            );
+        }
+
+
+        std::cout << "Density: "
+                << density
+                << ", edges: "
+                << targetEdges
+                << ", exact cut: "
+                << exactCut
+                << ", single Karger success: "
+                << singleRunSuccesses
+                << " / "
+                << densityExperiments
+                << ", SW median: "
+                << median(swTimes)
+                << " ns"
+                << ", Karger x20 median: "
+                << median(kargerTimes)
+                << " ns\n";
+    }
 
     return 0;
 }
