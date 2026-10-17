@@ -7,11 +7,14 @@
 #include <algorithm>
 #include <random>
 #include <set>
+#include <fstream>
+
 
 long long median(std::vector<long long> values) {
     std::sort(values.begin(), values.end());
     return values[values.size() / 2];
 }
+
 
 Graph makeRandomConnectedGraph(
     int vertices,
@@ -65,7 +68,21 @@ Graph makeRandomConnectedGraph(
     return graph;
 }
 
+
 int main() {
+
+    std::ofstream csv("results/benchmark.csv");
+
+    if (!csv) {
+        std::cerr << "Could not open results/benchmark.csv\n";
+        return 1;
+    }
+
+    csv << "experiment,algorithm,vertices,density,edges,repetitions,"
+           "graph_seed,trials,successes,success_rate,"
+           "median_time_ns,exact_cut\n";
+
+
     Graph triangle(3);
     triangle.addEdge(0, 1, 3);
     triangle.addEdge(0, 2, 2);
@@ -100,7 +117,10 @@ int main() {
     for (int repetitions : repetitionCounts) {
         int successes = 0;
 
-        for (int experiment = 0; experiment < experiments; ++experiment) {
+        for (int experiment = 0;
+             experiment < experiments;
+             ++experiment) {
+
             unsigned int baseSeed = experiment * 1000;
 
             int result = kargerRepeatedMinCut(
@@ -114,13 +134,34 @@ int main() {
             }
         }
 
-        std::cout << "Repetitions: " << repetitions
+        double successRate =
+            static_cast<double>(successes) / experiments;
+
+        std::cout << "Repetitions: "
+                  << repetitions
                   << ", successes: "
-                  << successes << " / "
-                  << experiments << '\n';
+                  << successes
+                  << " / "
+                  << experiments
+                  << '\n';
+
+        csv << "repetition_reliability,"
+            << "Karger,"
+            << 5 << ","
+            << ","
+            << ","
+            << repetitions << ","
+            << "multiple,"
+            << experiments << ","
+            << successes << ","
+            << successRate << ","
+            << ","
+            << exactCut
+            << '\n';
     }
 
     std::cout << "Triangle:\n";
+
     std::cout << "Stoer-Wagner: "
               << stoerWagnerMinCut(triangle)
               << '\n';
@@ -129,7 +170,9 @@ int main() {
               << kargerRepeatedMinCut(triangle, 20, 0)
               << "\n\n";
 
+
     std::cout << "Path:\n";
+
     std::cout << "Stoer-Wagner: "
               << stoerWagnerMinCut(path)
               << '\n';
@@ -138,7 +181,9 @@ int main() {
               << kargerRepeatedMinCut(path, 20, 0)
               << "\n\n";
 
+
     std::cout << "Cycle:\n";
+
     std::cout << "Stoer-Wagner: "
               << stoerWagnerMinCut(cycle)
               << '\n';
@@ -146,6 +191,7 @@ int main() {
     std::cout << "Karger repeated: "
               << kargerRepeatedMinCut(cycle, 20, 0)
               << '\n';
+
 
     std::cout << "\nFive-node graph:\n";
 
@@ -157,193 +203,142 @@ int main() {
               << kargerRepeatedMinCut(fiveNode, 50, 0)
               << '\n';
 
+
     std::cout << "\nTiming test:\n";
 
     std::vector<long long> swTimes;
 
     for (int run = 0; run < 51; ++run) {
-        auto start = std::chrono::high_resolution_clock::now();
+        auto start =
+            std::chrono::high_resolution_clock::now();
 
-        int result = stoerWagnerMinCut(fiveNode);
+        int result =
+            stoerWagnerMinCut(fiveNode);
 
-        auto end = std::chrono::high_resolution_clock::now();
+        auto end =
+            std::chrono::high_resolution_clock::now();
 
         swTimes.push_back(
-            std::chrono::duration_cast<std::chrono::nanoseconds>(
-                end - start
-            ).count()
+            std::chrono::duration_cast<
+                std::chrono::nanoseconds
+            >(end - start).count()
         );
     }
 
+    long long swMedian = median(swTimes);
+
     std::cout << "Stoer-Wagner median: "
-              << median(swTimes)
+              << swMedian
               << " ns\n";
 
+    csv << "repetition_runtime,"
+        << "Stoer-Wagner,"
+        << 5 << ","
+        << ","
+        << ","
+        << ","
+        << ","
+        << 51 << ","
+        << ","
+        << ","
+        << swMedian << ","
+        << exactCut
+        << '\n';
+
+
     for (int repetitions : repetitionCounts) {
+
         std::vector<long long> kargerTimes;
 
         for (int run = 0; run < 51; ++run) {
+
             unsigned int seed = run * 1000;
 
-            auto start = std::chrono::high_resolution_clock::now();
+            auto start =
+                std::chrono::high_resolution_clock::now();
 
-            int result = kargerRepeatedMinCut(
-                fiveNode,
-                repetitions,
-                seed
-            );
+            int result =
+                kargerRepeatedMinCut(
+                    fiveNode,
+                    repetitions,
+                    seed
+                );
 
-            auto end = std::chrono::high_resolution_clock::now();
+            auto end =
+                std::chrono::high_resolution_clock::now();
 
             kargerTimes.push_back(
-                std::chrono::duration_cast<std::chrono::nanoseconds>(
-                    end - start
-                ).count()
+                std::chrono::duration_cast<
+                    std::chrono::nanoseconds
+                >(end - start).count()
             );
         }
+
+        long long kargerMedian =
+            median(kargerTimes);
 
         std::cout << "Karger repetitions "
                   << repetitions
                   << " median: "
-                  << median(kargerTimes)
+                  << kargerMedian
                   << " ns\n";
+
+        csv << "repetition_runtime,"
+            << "Karger,"
+            << 5 << ","
+            << ","
+            << ","
+            << repetitions << ","
+            << "multiple,"
+            << 51 << ","
+            << ","
+            << ","
+            << kargerMedian << ","
+            << exactCut
+            << '\n';
     }
 
-    Graph random10 = makeRandomConnectedGraph(10, 10, 42);
-
-        std::cout << "\nRandom 10-node graph:\n";
-
-        std::cout << "Stoer-Wagner: "
-                  << stoerWagnerMinCut(random10)
-                  << '\n';
-
-        std::cout << "Karger repeated: "
-                  << kargerRepeatedMinCut(random10, 50, 0)
-                  << '\n';
-
-        std::cout << "\nSize scaling test:\n";
-
-int sizes[] = {10, 25, 50, 100};
-
-for (int vertices : sizes) {
-    Graph graph = makeRandomConnectedGraph(
-        vertices,
-        vertices,
-        42
-    );
-
-    int exactCut = stoerWagnerMinCut(graph);
-
-    std::vector<long long> swTimes;
-    std::vector<long long> kargerTimes;
-
-    for (int run = 0; run < 51; ++run) {
-        auto swStart =
-            std::chrono::high_resolution_clock::now();
-
-        int swResult =
-            stoerWagnerMinCut(graph);
-
-        auto swEnd =
-            std::chrono::high_resolution_clock::now();
-
-        swTimes.push_back(
-            std::chrono::duration_cast<std::chrono::nanoseconds>(
-                swEnd - swStart
-            ).count()
+    Graph random10 =
+        makeRandomConnectedGraph(
+            10,
+            10,
+            42
         );
 
-        auto kStart =
-            std::chrono::high_resolution_clock::now();
+    std::cout << "\nRandom 10-node graph:\n";
 
-        int kargerResult =
-            kargerRepeatedMinCut(
-                graph,
-                20,
-                run * 1000
-            );
+    std::cout << "Stoer-Wagner: "
+              << stoerWagnerMinCut(random10)
+              << '\n';
 
-        auto kEnd =
-            std::chrono::high_resolution_clock::now();
+    std::cout << "Karger repeated: "
+              << kargerRepeatedMinCut(
+                    random10,
+                    50,
+                    0
+                 )
+              << '\n';
 
-        kargerTimes.push_back(
-            std::chrono::duration_cast<std::chrono::nanoseconds>(
-                kEnd - kStart
-            ).count()
-        );
-    }
 
-    std::cout << "Vertices: "
-              << vertices
-              << ", exact cut: "
-              << exactCut
-              << ", Stoer-Wagner median: "
-              << median(swTimes)
-              << " ns, Karger x20 median: "
-              << median(kargerTimes)
-              << " ns\n";
-}
+    std::cout << "\nSize scaling test:\n";
 
-    std::cout << "\nDensity test:\n";
+    int sizes[] = {10, 25, 50, 100};
 
-    int densityVertices = 50;
-
-    double densities[] = {
-        0.10,
-        0.25,
-        0.50,
-        0.75
-    };
-
-    int maxEdges =
-        densityVertices *
-        (densityVertices - 1) / 2;
-
-    for (double density : densities) {
-
-        int targetEdges =
-            static_cast<int>(
-                density * maxEdges
-            );
-
-        int extraEdges =
-            targetEdges -
-            (densityVertices - 1);
+    for (int vertices : sizes) {
 
         Graph graph =
             makeRandomConnectedGraph(
-                densityVertices,
-                extraEdges,
+                vertices,
+                vertices,
                 42
             );
 
         int exactCut =
             stoerWagnerMinCut(graph);
 
-
-        // Single-run Karger reliability
-        int singleRunSuccesses = 0;
-        int densityExperiments = 100;
-
-        for (int experiment = 0;
-            experiment < densityExperiments;
-            ++experiment) {
-
-            int result =
-                kargerMinCut(
-                    graph,
-                    experiment * 1000
-                );
-
-            if (result == exactCut) {
-                ++singleRunSuccesses;
-            }
-        }
-
-
-        // Runtime measurements
         std::vector<long long> swTimes;
         std::vector<long long> kargerTimes;
+
 
         for (int run = 0; run < 51; ++run) {
 
@@ -357,9 +352,9 @@ for (int vertices : sizes) {
                 std::chrono::high_resolution_clock::now();
 
             swTimes.push_back(
-                std::chrono::duration_cast<std::chrono::nanoseconds>(
-                    swEnd - swStart
-                ).count()
+                std::chrono::duration_cast<
+                    std::chrono::nanoseconds
+                >(swEnd - swStart).count()
             );
 
 
@@ -377,68 +372,394 @@ for (int vertices : sizes) {
                 std::chrono::high_resolution_clock::now();
 
             kargerTimes.push_back(
-                std::chrono::duration_cast<std::chrono::nanoseconds>(
-                    kEnd - kStart
-                ).count()
+                std::chrono::duration_cast<
+                    std::chrono::nanoseconds
+                >(kEnd - kStart).count()
             );
         }
 
 
-        std::cout << "Density: "
-                << density
-                << ", edges: "
-                << targetEdges
-                << ", exact cut: "
-                << exactCut
-                << ", single Karger success: "
-                << singleRunSuccesses
-                << " / "
-                << densityExperiments
-                << ", SW median: "
-                << median(swTimes)
-                << " ns"
-                << ", Karger x20 median: "
-                << median(kargerTimes)
-                << " ns\n";
+        long long swMedian =
+            median(swTimes);
+
+        long long kargerMedian =
+            median(kargerTimes);
+
+
+        std::cout << "Vertices: "
+                  << vertices
+                  << ", exact cut: "
+                  << exactCut
+                  << ", Stoer-Wagner median: "
+                  << swMedian
+                  << " ns, Karger x20 median: "
+                  << kargerMedian
+                  << " ns\n";
+
+
+        csv << "size_scaling,"
+            << "Stoer-Wagner,"
+            << vertices << ","
+            << ","
+            << ","
+            << ","
+            << 42 << ","
+            << 51 << ","
+            << ","
+            << ","
+            << swMedian << ","
+            << exactCut
+            << '\n';
+
+
+        csv << "size_scaling,"
+            << "Karger,"
+            << vertices << ","
+            << ","
+            << ","
+            << 20 << ","
+            << 42 << ","
+            << 51 << ","
+            << ","
+            << ","
+            << kargerMedian << ","
+            << exactCut
+            << '\n';
     }
 
-            unsigned int graphSeeds[] = {
-            42,
-            142,
-            242,
-            342,
-            442
-        };
 
-        std::cout << "\nDensity reliability across graph seeds:\n";
+    std::cout << "\nDensity test:\n";
 
-        for (double density : densities) {
-            int totalSuccesses = 0;
-            int totalTrials = 0;
+    int densityVertices = 50;
 
-            int targetEdges =
-                static_cast<int>(density * maxEdges);
+    double densities[] = {
+        0.10,
+        0.25,
+        0.50,
+        0.75
+    };
 
-            int extraEdges =
-                targetEdges - (densityVertices - 1);
+    int maxEdges =
+        densityVertices *
+        (densityVertices - 1) / 2;
 
-            for (unsigned int graphSeed : graphSeeds) {
-                Graph graph = makeRandomConnectedGraph(
+
+    for (double density : densities) {
+
+        int targetEdges =
+            static_cast<int>(
+                density * maxEdges
+            );
+
+        int extraEdges =
+            targetEdges -
+            (densityVertices - 1);
+
+
+        Graph graph =
+            makeRandomConnectedGraph(
+                densityVertices,
+                extraEdges,
+                42
+            );
+
+
+        int exactCut =
+            stoerWagnerMinCut(graph);
+
+
+        // Single-run Karger reliability
+        int singleRunSuccesses = 0;
+        int densityExperiments = 100;
+
+
+        for (int experiment = 0;
+             experiment < densityExperiments;
+             ++experiment) {
+
+            int result =
+                kargerMinCut(
+                    graph,
+                    experiment * 1000
+                );
+
+            if (result == exactCut) {
+                ++singleRunSuccesses;
+            }
+        }
+
+
+        double singleSuccessRate =
+            static_cast<double>(
+                singleRunSuccesses
+            ) / densityExperiments;
+
+
+        std::vector<long long> swTimes;
+        std::vector<long long> kargerTimes;
+
+
+        for (int run = 0; run < 51; ++run) {
+
+            auto swStart =
+                std::chrono::high_resolution_clock::now();
+
+            int swResult =
+                stoerWagnerMinCut(graph);
+
+            auto swEnd =
+                std::chrono::high_resolution_clock::now();
+
+            swTimes.push_back(
+                std::chrono::duration_cast<
+                    std::chrono::nanoseconds
+                >(swEnd - swStart).count()
+            );
+
+
+            auto kStart =
+                std::chrono::high_resolution_clock::now();
+
+            int kargerResult =
+                kargerRepeatedMinCut(
+                    graph,
+                    20,
+                    run * 1000
+                );
+
+            auto kEnd =
+                std::chrono::high_resolution_clock::now();
+
+            kargerTimes.push_back(
+                std::chrono::duration_cast<
+                    std::chrono::nanoseconds
+                >(kEnd - kStart).count()
+            );
+        }
+
+
+        long long swMedian =
+            median(swTimes);
+
+        long long kargerMedian =
+            median(kargerTimes);
+
+
+        std::cout << "Density: "
+                  << density
+                  << ", edges: "
+                  << targetEdges
+                  << ", exact cut: "
+                  << exactCut
+                  << ", single Karger success: "
+                  << singleRunSuccesses
+                  << " / "
+                  << densityExperiments
+                  << ", SW median: "
+                  << swMedian
+                  << " ns"
+                  << ", Karger x20 median: "
+                  << kargerMedian
+                  << " ns\n";
+
+        csv << "density_reliability,"
+            << "Karger,"
+            << densityVertices << ","
+            << density << ","
+            << targetEdges << ","
+            << 1 << ","
+            << 42 << ","
+            << densityExperiments << ","
+            << singleRunSuccesses << ","
+            << singleSuccessRate << ","
+            << ","
+            << exactCut
+            << '\n';
+
+
+        // Stoer-Wagner runtime
+        csv << "density_runtime,"
+            << "Stoer-Wagner,"
+            << densityVertices << ","
+            << density << ","
+            << targetEdges << ","
+            << ","
+            << 42 << ","
+            << 51 << ","
+            << ","
+            << ","
+            << swMedian << ","
+            << exactCut
+            << '\n';
+
+
+        // Karger x20 runtime
+        csv << "density_runtime,"
+            << "Karger,"
+            << densityVertices << ","
+            << density << ","
+            << targetEdges << ","
+            << 20 << ","
+            << 42 << ","
+            << 51 << ","
+            << ","
+            << ","
+            << kargerMedian << ","
+            << exactCut
+            << '\n';
+    }
+
+    unsigned int graphSeeds[] = {
+        42,
+        142,
+        242,
+        342,
+        442
+    };
+
+
+    std::cout
+        << "\nDensity reliability across graph seeds:\n";
+
+
+    for (double density : densities) {
+
+        int totalSuccesses = 0;
+        int totalTrials = 0;
+
+        int targetEdges =
+            static_cast<int>(
+                density * maxEdges
+            );
+
+        int extraEdges =
+            targetEdges -
+            (densityVertices - 1);
+
+
+        for (unsigned int graphSeed : graphSeeds) {
+
+            Graph graph =
+                makeRandomConnectedGraph(
                     densityVertices,
                     extraEdges,
                     graphSeed
                 );
 
-                int exactCut = stoerWagnerMinCut(graph);
+            int exactCut =
+                stoerWagnerMinCut(graph);
 
-                for (int experiment = 0;
-                    experiment < 100;
-                    ++experiment) {
 
-                    int result = kargerMinCut(
+            for (int experiment = 0;
+                 experiment < 100;
+                 ++experiment) {
+
+                int result =
+                    kargerMinCut(
                         graph,
                         experiment * 1000
                     );
+
+                if (result == exactCut) {
+                    ++totalSuccesses;
+                }
+
+                ++totalTrials;
+            }
+        }
+
+
+        double successRate =
+            static_cast<double>(
+                totalSuccesses
+            ) / totalTrials;
+
+
+        std::cout << "Density: "
+                  << density
+                  << ", successes: "
+                  << totalSuccesses
+                  << " / "
+                  << totalTrials
+                  << '\n';
+
+
+        csv << "density_multi_graph,"
+            << "Karger,"
+            << densityVertices << ","
+            << density << ","
+            << targetEdges << ","
+            << 1 << ","
+            << "multiple,"
+            << totalTrials << ","
+            << totalSuccesses << ","
+            << successRate << ","
+            << ","
+            << '\n';
+    }
+
+    std::cout
+        << "\nKarger repetitions across densities:\n";
+
+
+    int densityRepetitionCounts[] = {
+        1,
+        10,
+        20
+    };
+
+    int trialsPerGraph = 50;
+
+
+    for (double density : densities) {
+
+        int targetEdges =
+            static_cast<int>(
+                density * maxEdges
+            );
+
+        int extraEdges =
+            targetEdges -
+            (densityVertices - 1);
+
+
+        for (int repetitions :
+             densityRepetitionCounts) {
+
+            int totalSuccesses = 0;
+            int totalTrials = 0;
+
+
+            for (unsigned int graphSeed :
+                 graphSeeds) {
+
+                Graph graph =
+                    makeRandomConnectedGraph(
+                        densityVertices,
+                        extraEdges,
+                        graphSeed
+                    );
+
+                int exactCut =
+                    stoerWagnerMinCut(graph);
+
+
+                for (int experiment = 0;
+                     experiment < trialsPerGraph;
+                     ++experiment) {
+
+                    unsigned int baseSeed =
+                        graphSeed * 100000
+                        + experiment * 1000;
+
+
+                    int result =
+                        kargerRepeatedMinCut(
+                            graph,
+                            repetitions,
+                            baseSeed
+                        );
+
 
                     if (result == exactCut) {
                         ++totalSuccesses;
@@ -448,80 +769,41 @@ for (int vertices : sizes) {
                 }
             }
 
+
+            double successRate =
+                static_cast<double>(
+                    totalSuccesses
+                ) / totalTrials;
+
+
             std::cout << "Density: "
-                    << density
-                    << ", successes: "
-                    << totalSuccesses
-                    << " / "
-                    << totalTrials
-                    << '\n';
+                      << density
+                      << ", repetitions: "
+                      << repetitions
+                      << ", successes: "
+                      << totalSuccesses
+                      << " / "
+                      << totalTrials
+                      << '\n';
+
+
+            csv << "density_repetitions,"
+                << "Karger,"
+                << densityVertices << ","
+                << density << ","
+                << targetEdges << ","
+                << repetitions << ","
+                << "multiple,"
+                << totalTrials << ","
+                << totalSuccesses << ","
+                << successRate << ","
+                << ","
+                << '\n';
         }
+    }
 
-    
-    
-        std::cout << "\nKarger repetitions across densities:\n";
 
-        int densityRepetitionCounts[] = {1, 10, 20};
-        int trialsPerGraph = 50;
-
-        for (double density : densities) {
-
-            int targetEdges =
-                static_cast<int>(density * maxEdges);
-
-            int extraEdges =
-                targetEdges - (densityVertices - 1);
-
-            for (int repetitions : densityRepetitionCounts) {
-
-                int totalSuccesses = 0;
-                int totalTrials = 0;
-
-                for (unsigned int graphSeed : graphSeeds) {
-
-                    Graph graph = makeRandomConnectedGraph(
-                        densityVertices,
-                        extraEdges,
-                        graphSeed
-                    );
-
-                    int exactCut =
-                        stoerWagnerMinCut(graph);
-
-                    for (int experiment = 0;
-                        experiment < trialsPerGraph;
-                        ++experiment) {
-
-                        unsigned int baseSeed =
-                            graphSeed * 100000
-                            + experiment * 1000;
-
-                        int result =
-                            kargerRepeatedMinCut(
-                                graph,
-                                repetitions,
-                                baseSeed
-                            );
-
-                        if (result == exactCut) {
-                            ++totalSuccesses;
-                        }
-
-                        ++totalTrials;
-                    }
-                }
-
-                std::cout << "Density: "
-                        << density
-                        << ", repetitions: "
-                        << repetitions
-                        << ", successes: "
-                        << totalSuccesses
-                        << " / "
-                        << totalTrials
-                        << '\n';
-            }
-        }
+    csv.close();
 
     return 0;
 }
