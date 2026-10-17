@@ -457,5 +457,71 @@ for (int vertices : sizes) {
                     << '\n';
         }
 
+    
+    
+        std::cout << "\nKarger repetitions across densities:\n";
+
+        int densityRepetitionCounts[] = {1, 10, 20};
+        int trialsPerGraph = 50;
+
+        for (double density : densities) {
+
+            int targetEdges =
+                static_cast<int>(density * maxEdges);
+
+            int extraEdges =
+                targetEdges - (densityVertices - 1);
+
+            for (int repetitions : densityRepetitionCounts) {
+
+                int totalSuccesses = 0;
+                int totalTrials = 0;
+
+                for (unsigned int graphSeed : graphSeeds) {
+
+                    Graph graph = makeRandomConnectedGraph(
+                        densityVertices,
+                        extraEdges,
+                        graphSeed
+                    );
+
+                    int exactCut =
+                        stoerWagnerMinCut(graph);
+
+                    for (int experiment = 0;
+                        experiment < trialsPerGraph;
+                        ++experiment) {
+
+                        unsigned int baseSeed =
+                            graphSeed * 100000
+                            + experiment * 1000;
+
+                        int result =
+                            kargerRepeatedMinCut(
+                                graph,
+                                repetitions,
+                                baseSeed
+                            );
+
+                        if (result == exactCut) {
+                            ++totalSuccesses;
+                        }
+
+                        ++totalTrials;
+                    }
+                }
+
+                std::cout << "Density: "
+                        << density
+                        << ", repetitions: "
+                        << repetitions
+                        << ", successes: "
+                        << totalSuccesses
+                        << " / "
+                        << totalTrials
+                        << '\n';
+            }
+        }
+
     return 0;
 }
