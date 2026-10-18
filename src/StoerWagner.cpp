@@ -31,7 +31,7 @@ int stoerWagnerMinCut(Graph graph) {
             added[selected] = true;
 
             if (i == phaseSize - 1) {
-                                
+
                 bestCut = std::min(bestCut, connectionWeight[selected]);
                 graph.mergeVertices(prev, selected);
             }
