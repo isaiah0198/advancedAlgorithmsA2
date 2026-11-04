@@ -5,7 +5,7 @@
 This project compares two algorithms for the **global minimum cut** problem:
 
 - **Stoer-Wagner** — deterministic minimum cut
-- **Karger’s Randomized Contraction Algorithm** — probabilistic minimum cut
+- **Karger’s Randomised Contraction Algorithm** — probabilistic minimum cut
 
 The project investigates how graph size, graph density, and Karger repetition count affect:
 

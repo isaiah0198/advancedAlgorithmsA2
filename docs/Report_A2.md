@@ -1,5 +1,13 @@
 # Empirical Comparison of Karger’s Randomised Contraction Algorithm and the Stoer–Wagner Algorithm for Global Minimum Cut
 
+The full report is available at:
+
+[Global Minimum Cut Comparison Report](docs/Report_A2.md)
+
+It includes the theoretical comparison, implementation
+details, experimental methodology, results, discussion,
+limitations, individual contributions and AI-use disclosure.
+
 ## 1. Introduction
 
 The global minimum cut problem asks for the minimum total edge weight that must be removed from an undirected graph to divide the graph into two non-empty disconnected components. The problem provides a useful setting for comparing deterministic and randomized algorithms because the same target result can be approached using substantially different strategies.
@@ -20,9 +28,9 @@ The investigation focused on three areas:
 
 **Primary author: Isaiah Lane**
 
-### 2.1 Algorithm Overview
+### 2.1 Algorithm Overview 
 
-Stoer–Wagner is a deterministic algorithm for finding the global minimum cut of an undirected weighted graph. The original algorithm consists of approximately $|V|$ maximum-adjacency search phases.
+Stoer–Wagner is a deterministic algorithm for finding the global minimum cut of an undirected weighted graph (Stoer & Wagner, 1997). The original algorithm consists of approximately $|V|$ maximum-adjacency search phases.
 
 During each phase, the algorithm begins with an arbitrary active vertex and repeatedly adds the vertex that has the greatest total connection weight to the vertices already selected.
 
@@ -46,7 +54,7 @@ $$
 
 within the current contracted graph.
 
-This is a valid cut. Stoer–Wagner’s correctness argument shows that the minimum $s$-$t$ cut for the final two vertices of a phase is represented by this phase cut, and contracting $s$ and $t$ allows the remaining global minimum-cut possibilities to be preserved for later phases.
+This is a valid cut. Stoer–Wagner’s correctness argument shows that the minimum $s$-$t$ cut for the final two vertices of a phase is represented by this phase cut, and contracting $s$ and $t$ allows the remaining global minimum-cut possibilities to be preserved for later phases (Stoer & Wagner, 1997).
 
 This process is repeated until the graph has been reduced to one active supervertex.
 
@@ -94,7 +102,7 @@ The total weight of the edges between the final two supervertices is returned as
 
 The key risk is that a true minimum-cut edge may be contracted before the algorithm finishes. Once this happens, the corresponding minimum cut cannot be recovered during that run.
 
-This makes Karger probabilistic rather than deterministic.
+This makes Karger probabilistic rather than deterministic (Karger, 1993).
 
 ### 3.2 Single-Run Success Bound
 
@@ -120,7 +128,7 @@ $$
 0.0816\%
 $$
 
-This is a worst-case guarantee rather than a prediction that all 50-vertex graphs will have such a low success probability.
+This is a worst-case guarantee rather than a prediction that all 50-vertex graphs will have such a low success probability (Karger, 1993).
 
 The experimental results in this project were substantially better than this lower bound.
 
@@ -331,7 +339,15 @@ The final benchmarks were compiled using C++17 and optimisation:
 
 AddressSanitizer was used during debugging but excluded from the final performance measurements because instrumentation adds substantial overhead.
 
-The exact compiler version and hardware specification should be recorded in the final submitted version using the system information from the machine on which the benchmark was run.
+| Component | My specification |
+|-----------|--------------------|
+| Computer | Apple MacBook Air |
+| Processor | Apple M4, 10 cores (4 performance, 6 efficiency) |
+| Memory | 16 GB unified memory |
+| Operating system | macOS 27.0.1 |
+| Compiler | Apple Clang 21.0.0 |
+| Architecture | ARM64 |
+| Language standard | C++17 |
 
 No explicit warm-up phase was used. Each runtime condition was instead executed 51 times, and the median was reported. Using a median reduces sensitivity to occasional unusually high or low timings, although it does not completely remove possible cold-start effects.
 
@@ -469,42 +485,39 @@ However, the 100% observed success at 20 repetitions applies only to this five-v
 
 | Algorithm | Median runtime |
 |---|---:|
-| Stoer–Wagner | 1,292 ns |
-| Karger ×1 | 2,750 ns |
-| Karger ×2 | 5,417 ns |
-| Karger ×5 | 13,542 ns |
-| Karger ×10 | 27,042 ns |
-| Karger ×20 | 46,917 ns |
-| Karger ×50 | 117,292 ns |
+| Stoer–Wagner | 833 ns |
+| Karger ×1 | 1,750 ns |
+| Karger ×2 | 3,459 ns |
+| Karger ×5 | 9,833 ns |
+| Karger ×10 | 17,291 ns |
+| Karger ×20 | 34,209 ns |
+| Karger ×50 | 88,125 ns |
 
-Karger runtime rose approximately linearly with repetition count, matching the prediction that each repetition adds another complete contraction execution.
+Runtime of Karger’s algorithm scaled almost linearly with repetition number as expected since every repetition runs another contraction run. On the graph of five vertices, Stoer-Wagner ran in 833 ns, while one repetition of Karger’s algorithm ran in 1,750 ns. After 20 repetitions, Karger ran in 34,209 ns. This illustrates the increasing of computational costs when improving reliability through repeated execution.
 
 ## 10. Graph Size Results
 
 | Vertices | Exact cut | Stoer–Wagner median | Karger ×20 median |
 |---:|---:|---:|---:|
-| 10 | 2 | 5,459 ns | 89,167 ns |
-| 25 | 1 | 90,166 ns | 789,042 ns |
-| 50 | 1 | 620,334 ns | 4,585,625 ns |
-| 100 | 1 | 5,086,334 ns | 30,232,917 ns |
+| 10 | 2 | 6,042 ns | 93,917 ns |
+| 25 | 1 | 88,834 ns | 698,000 ns |
+| 50 | 1 | 495,000 ns | 3,771,750 ns |
+| 100 | 1 | 3,641,958 ns | 23,433,500 ns |
 
-Both algorithms showed rapid growth as the number of vertices increased.
+![Runtime versus graph size](figures/runtime_scaling.png)
 
-For Stoer–Wagner, doubling graph size from 50 to 100 vertices increased runtime from approximately 0.62 ms to 5.09 ms, a factor of approximately eight.
+*Figure 1. Median runtime comparison between Stoer–Wagner
+and Karger with 20 repetitions.*
 
-Since:
+Both implementations exhibited significant runtime increase with increasing the graph size. Thus, Stoer-Wagner runtime increased from 0.495 ms to approximately 3.642 ms when the number of vertices was doubled from 50 to 100. It is a 7.36 increase.
 
-$$
-2^3 = 8
-$$
+With 20 repetitions Karger runtime increased from approximately 3.772 ms to 23.434 ms, which is a 6.21 increase.
 
-this is consistent with the predicted cubic behaviour of the implementation.
+Both results are in agreement with expected cubic time complexity of both implementations. Doubling the input size of a cubic algorithm should lead to eightfold runtime increase; however, the measurement may differ due to the fixed overhead and specifics of implementation.
 
-Karger ×20 also displayed behaviour broadly consistent with cubic scaling when repetition count was held constant.
+The runtime ratio between Karger ×20 and Stoer-Wagner algorithms decreased from approximately 15.5 with 10 vertices to 6.4 with 100 vertices. Nevertheless, it cannot be taken as a proof of better asymptotic complexity of Karger algorithm because both implementations use adjacency-matrix scanning and have cubic runtime complexity.
 
-The ratio between Karger ×20 and Stoer–Wagner fell from roughly sixteen times at $n=10$ to roughly six times at $n=100$.
-
-This should not be interpreted as evidence that the Karger implementation has better asymptotic complexity. Both implementations are approximately cubic. Fixed per-run overheads such as constructing `mt19937`, copying graph state and repeatedly entering the contraction routine are likely to contribute more heavily to runtime on smaller graphs.
+Thus, results confirm theoretical predictions on the implementation level. The small graph sizes and number of graph instances prevent the calculation of asymptotic complexity.
 
 ## 11. Density Results
 
@@ -523,16 +536,20 @@ The minimum-cut value increased as density increased for the graph generated usi
 
 | Density | Stoer–Wagner | Karger ×20 |
 |---:|---:|---:|
-| 0.10 | 648,292 ns | 4,571,041 ns |
-| 0.25 | 667,750 ns | 4,855,167 ns |
-| 0.50 | 673,000 ns | 4,817,291 ns |
-| 0.75 | 674,208 ns | 4,921,625 ns |
+| 0.10 | 460,916 ns | 3,347,250 ns |
+| 0.25 | 481,792 ns | 3,572,791 ns |
+| 0.50 | 526,500 ns | 3,812,000 ns |
+| 0.75 | 525,708 ns | 3,955,166 ns |
 
 Density had relatively little effect on runtime compared with graph size.
 
 This matches the theoretical prediction based on the implementation.
 
 Both algorithms repeatedly scan ranges of possible vertices in the adjacency matrix. Increasing the number of actual edges therefore does not increase work as dramatically as increasing the matrix dimension.
+
+For all tested densities, the running time of the Stoer-Wagner algorithm grew from about 0.461 milliseconds to 0.526 milliseconds, whereas the running time of Karger*20 grew from about 3.347 milliseconds to 3.955 milliseconds. 
+
+The relative constancy of these results can be explained by using the adjacency matrix structure, where the algorithms scan the possibilities of connecting the vertices again and again regardless of the number of edges.
 
 ## 12. Karger Reliability and Density
 
@@ -553,6 +570,10 @@ The experiment was repeated across five generated graphs.
 | 0.25 | 69 / 500 | 13.8% |
 | 0.50 | 30 / 500 | 6.0% |
 | 0.75 | 34 / 500 | 6.8% |
+
+![Karger reliability versus density](figures/density_reliability.png)
+
+*Figure 2. Single-run Karger success rate across graph densities.*
 
 The decline therefore remained after introducing additional graph instances.
 
@@ -619,6 +640,11 @@ $$
 72\%
 $$
 
+
+![Karger reliability versus repetitions](figures/repetition_reliability.png)
+
+*Figure 3. Karger success rates across repetition counts and densities.*
+
 This close agreement shows that repetition behaved approximately as expected from the probabilistic model.
 
 Differences between theoretical predictions calculated from aggregate $p$ and observed results can be explained partly by graph-to-graph variation. Each generated graph may have a different underlying success probability.
@@ -677,49 +703,29 @@ approximately 49 repetitions are required for around 95% confidence.
 
 This is substantially larger than the 20 repetitions used in the original runtime comparison, but still dramatically lower than would be required under the theoretical worst-case bound.
 
-This demonstrates the difference between a worst-case guarantee and typical performance on a particular graph family.
+This demonstrates the difference between a worst-case guarantee and typical performance on a particular graph family (Karger, 1993).
 
 ## 15. Equal-Reliability Runtime Comparison
 
-A fixed Karger repetition count is not always a fair comparison with deterministic Stoer–Wagner.
+For the density of 0.50, the success probability for the single run of Karger was approximately 6%. In order to ensure a success probability of 95%, with a fixed single run success probability, about 49 independent runs will be necessary.
 
-At density 0.50:
-
-- single-run Karger success was approximately 6%;
-- 20 repetitions achieved 76.4%;
-- approximately 49 repetitions would be required for about 95% confidence.
-
-Karger ×20 required approximately:
+Karger with 20 runs needed a median runtime of 3.812 ms. For approximately linear runtime dependence on the number of repetitions:
 
 $$
-4.82\text{ ms}
+T_{49}\approx3.812\times\frac{49}{20}
 $$
 
-at density 0.50.
-
-Assuming approximately linear scaling with repetition count:
-
 $$
-4.82
-\times
-\frac{49}{20}
-\approx
-11.8\text{ ms}
+T_{49}\approx9.34\text{ ms}
 $$
 
-would be expected for roughly 49 repetitions.
+Stoer–Wagner needed approximately 0.527 ms for the same graph condition and gave the exact minimum cut deterministically.
 
-Stoer–Wagner required approximately:
+The expected runtime ratio is approximately 17.7 to 1 in favour of Stoer–Wagner.
 
-$$
-0.67\text{ ms}
-$$
+However, the estimated runtime for 49 repetitions is not a direct measurement, but an extrapolation from the data. Also, the success probability estimation is based on a fixed single run success probability for independent runs, while actual probability may vary for individual graph instances.
 
-and returned an exact deterministic result.
-
-Therefore, for this implementation and graph family, Stoer–Wagner provided a substantially better runtime/reliability trade-off.
-
-This comparison remains implementation-specific because Karger’s matrix-scanning edge selection contributes significantly to its runtime.
+It can be concluded that Stoer–Wagner provided a significantly better runtime and success probability trade-off for the implemented algorithms, although it does not prove that it is always faster than Karger.
 
 ## 16. Discussion
 
