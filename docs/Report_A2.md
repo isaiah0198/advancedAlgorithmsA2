@@ -1,13 +1,4 @@
 # Empirical Comparison of Karger’s Randomised Contraction Algorithm and the Stoer–Wagner Algorithm for Global Minimum Cut
-
-The full report is available at:
-
-[Global Minimum Cut Comparison Report](docs/Report_A2.md)
-
-It includes the theoretical comparison, implementation
-details, experimental methodology, results, discussion,
-limitations, individual contributions and AI-use disclosure.
-
 ## 1. Introduction
 
 The global minimum cut problem asks for the minimum total edge weight that must be removed from an undirected graph to divide the graph into two non-empty disconnected components. The problem provides a useful setting for comparing deterministic and randomized algorithms because the same target result can be approached using substantially different strategies.
